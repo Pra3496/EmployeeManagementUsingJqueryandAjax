@@ -1,0 +1,335 @@
+﻿
+
+@{
+    ViewBag.Title = "Create with Ajax";
+}
+
+
+
+<div class="d-flex mb-4 mt-3 form-check">
+    <input name="Search" id="searchtxt" class="form-control" style="width:80%" />&nbsp;
+    <button type="button" class="btn btn-primary " id="serchbtn">Search</button> &nbsp;
+    <button id="crtbtn" type="button" class="btn btn-primary">Add </button>
+</div>
+
+<div class="tblContainer">
+    <table id="tablecontainer" class="table">
+        <thead class="thead-dark">
+            <tr>
+                <th scope="col">UserId</th>
+                <th scope="col">Name</th>
+                <th scope="col">Gender</th>
+                <th scope="col">Department</th>
+                <th scope="col">Salary</th>
+                <th scope="col">StartDate</th>
+                <th scope="col">Notes</th>
+                <th scope="col">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+   
+        </tbody>
+    </table>
+</div>
+
+<hr>
+
+
+<div id="cont" style="display: none;">
+    <h2 id="htitle"></h2>
+    <input type="hidden" name="UserId" id="UserId" />
+    <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">Name</label>
+        <input type="text" name="Name" id="Name" class="form-control" />
+
+    </div>
+    <div class="mb-3">
+        @*<label for="exampleInputEmail1" class="form-label">Gender</label>
+        <input type="text" name="Gender" id="Gender" class="form-control" />*@
+        <input type="radio" id="Gender" name="Gender" value="Male">
+        <label for="male" class="form-label">Male</label><br>
+        <input type="radio" id="Gender" name="Gender" value="Female">
+        <label for="female" class="form-label">Female</label><br>
+
+    </div>
+    <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">Department</label>
+        <select name="Department" id="Department" class="form-control">
+            <option value="Department of Engineering">Department of Engineering</option>
+            <option value="Department of Marketing">Department of Marketing</option>
+            <option value="Software and technology">Software and technology</option>
+            <option value="HR Department">HR Department</option>
+        </select>
+
+    </div>
+    <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">Salary</label>
+        <input type="range" min="3000.00" max="1000000.00" step="10" name="Salary" id="Salary" class="form-control" />
+         <div class="value">0</div>
+
+    </div>
+    <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">Start At</label>
+        <input type="datetime-local" name="StartDate" id="StartDate" class="form-control" />
+
+    </div>
+    <div class="mb-3">
+        <label for="exampleInputEmail1" class="form-label">Notes</label>
+        <input type="text" name="Notes" id="Notes" class="form-control" />
+
+    </div>
+
+    <div class="d-flex mb-2 form-check">
+        <button id="submit" type="button" onclick="SaveEmployee()" class="btn-danger form-control">Save</button><br>&nbsp;
+        <button id="editbtn" type="button" onclick="sendEditData()" class="btn-danger form-control">Save Changes</button><br>&nbsp;
+        <button id="clearButton" type="button" onclick="SaveStudent()" class="btn-danger form-control">Clear</button>
+    </div>
+</div>
+
+
+<script>
+
+    reviveData();
+
+      $("#crtbtn").click(function () {
+
+        $("#cont").css("display", "block");
+        $("#editbtn").css("display", "none");
+        $("#htitle").text("Add Employee");
+        $("#cont").find("input[type='text']").val("");
+        $("#cont").find("input[type='range']").val("");
+        $("#cont").find("input[type='date']").val("");
+   
+
+      });
+
+    var elem = document.querySelector('input[type="range"]');
+
+    var rangeValue = function () {
+        var newValue = elem.value;
+        var target = document.querySelector('.value');
+        target.innerHTML = newValue;
+    }
+
+    elem.addEventListener("input", rangeValue);
+
+
+    function populateTable(dataArray) {
+
+        console.log(dataArray);
+        var tableBody = $("#tablecontainer tbody");
+
+        // Clear existing table rows
+        tableBody.empty();
+
+        // Loop through the array and create table rows
+        $.each(dataArray, function (index, item) {
+            var row = $("<tr>");
+            row.append("<th scope=`row`>" + item.userId + "</th>");
+            row.append("<td>" + item.name + "</td>");
+            row.append("<td>" + item.gender + "</td>");
+            row.append("<td>" + item.department + "</td>");
+            row.append("<td>" + item.salary + "</td>");
+            row.append("<td>" + item.startDate + "</td>");
+            row.append("<td>" + item.notes + "</td>");
+            row.append('<td><button id="editbtn" class=" btn-danger" onclick="EditEmployee(' +
+                item.userId + ', \'' + item.name + '\', \'' + item.gender + '\', \'' + item.department +
+                '\', ' + item.salary + ', \'' + item.startDate + '\', \'' + item.notes + '\')">Edit</button>&nbsp;&nbsp;' +
+                '<button id="deletebtn" onclick="DeleteEmployee(' + item.userId + ')" class="btn-danger">Delete</button></td>');
+
+            tableBody.append(row);
+        });
+    }
+
+    $("#crearebtn").click(function () {
+
+        $("#createcontainer").css("display", "block");
+        $("#htitle").text("add employee");
+        $('#editbtn').css('display', 'none');
+        $("#submit").css("display", "block");
+
+        $("#createcontainer").find("input[type='text']").val("");
+        $("#createcontainer").find("input[type='range']").val("");
+        $("#createcontainer").find("input[type='date']").val("");
+
+    });
+ 
+
+    $(document).ready(function () {
+        // Get a reference to the clear button and the div containing input boxes
+        var clearButton = $("#clearButton");
+        var inputDiv = $("#CreateContainer");
+
+        // Set up a click event handler for the clear button
+        clearButton.click(function () {
+            // Find all input boxes within the div and clear their values
+            inputDiv.find("input[type='text']").val("");
+            inputDiv.find("input[type='range']").val("");
+            inputDiv.find("input[type='date']").val("");
+        });
+    });
+
+    $(document).ready(function () {
+        $("#serchbtn").click(function () {
+            var searchtxt = $("#searchtxt").val();
+            if(searchtxt == ""){
+                reviveData();
+                return;
+            }
+            let formData = {
+                search: searchtxt,
+            }
+            console.log(formData)
+            $.ajax({
+                url: "/Employee/GetEmployee",
+                type: "POST",
+                data: formData,
+                success: function (response) {
+                    populateTable(response);
+                },
+                error: function (request, status, error) {
+                    alert(request.responseText);
+                }
+            });
+        });
+     });
+
+
+
+    function SaveEmployee() {
+        //get all selected radio button. In our case we gave same name to radio button
+        //so only one radio button will be selected either Male or Female
+        //var selected = $("input[type='radio'][name='Gender']:checked");
+        let formData = {
+            
+            Name: $("#Name").val(),
+            Gender: $("input[name='Gender']:checked").val(),
+            Department: $("#Department").val(),
+            Salary: $("#Salary").val(),
+            StartDate: $("#StartDate").val(),
+            Notes: $("#Notes").val()
+        }
+        console.log(formData)
+        $.ajax({
+            url: "/Employee/AddEmployee",
+            type: "POST",
+            data: formData,
+            success: function (response) {
+                populateTable(response);
+                $("#cont").css("display", "none");
+            },
+            error: function (request, status, error) {
+                alert(request.responseText);
+            }
+        });
+    }
+
+
+
+
+
+
+
+
+    function EditEmployee(userId, name, gender, department, salary, startDate, notes) {
+
+
+            $("#cont").css("display", "block");
+            $("#editbtn").css("display", "block");
+            $("#submit").css("display", "none");
+
+            $("#htitle").text( "Edit Employee");
+        
+
+            $("#UserId").val(userId);
+            $("#Name").val(name);
+            $("#Gender").val(gender);
+            $("#Department").val(department);
+            $("#Salary").val(salary);
+            $("#StartDate").val(startDate);
+            $("#Notes").val(notes);
+
+        
+
+    }
+
+    function sendEditData()
+    {
+        let formData = {
+            UserId: $("#UserId").val(),
+            Name: $("#Name").val(),
+            Gender: $("#Gender").val(),
+            Department: $("#Department").val(),
+            Salary: $("#Salary").val(),
+            Notes: $("#Notes").val()
+        }
+        console.log(formData)
+        $.ajax({
+            url: "/Employee/EditEmployee",
+            type: "PUT",
+            data: formData,
+            success: function (response) {
+                reviveData();
+                $("#cont").css("display", "none");
+            },
+            error: function (request, status, error) {
+                alert(request.responseText);
+            }
+        });
+    }
+
+  
+    function DeleteEmployee(userId) {
+
+   
+       var con = confirm("Are you sure You Want To Delete This Id : "+userId);
+
+       if(!con)
+       {
+           return;
+       }
+       else
+       {
+            let formData = {
+                UserId: userId
+
+            }
+            console.log(formData)
+            $.ajax({
+                url: "/Employee/DeleteEmployee",
+                type: "DELETE",
+                data: formData,
+                success: function (response) {
+                    alert(response);
+                    reviveData();
+                },
+                error: function (request, status, error) {
+                    alert(request.responseText);
+                }
+            });
+       }
+    
+        
+    }
+
+  
+
+    function reviveData()
+    {
+        $.ajax({
+            url: "/Employee/GetEmployee",
+            type: "GET",
+            datatype: "json",
+            success: function (response) {
+
+                populateTable(response);
+            },
+            error: function (request, status, error) {
+                alert(request.responseText);
+            }
+        });
+    }
+
+
+
+</script>
