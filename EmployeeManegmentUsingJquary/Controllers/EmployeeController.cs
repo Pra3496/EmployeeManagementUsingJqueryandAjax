@@ -1,18 +1,29 @@
 ﻿using Bussiness.Interface;
 using Common.Model;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
+using Repository.Entities;
 using Repository.Interface;
 using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json.Serialization;
+using System.Text;
+using Newtonsoft.Json;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace EmployeeManegmentUsingJquary.Controllers
 {
     public class EmployeeController : Controller 
     {
         private readonly IEmployeeBussiness employeeBussiness;
-        public EmployeeController(IEmployeeBussiness employeeBussiness) 
+        private readonly IMemoryCache memoryCache;
+        private readonly IDistributedCache distributedCache;
+        public EmployeeController(IEmployeeBussiness employeeBussiness, IMemoryCache memoryCache, IDistributedCache distributedCache) 
         {
             this.employeeBussiness = employeeBussiness;
+            this.memoryCache = memoryCache;
+            this.distributedCache = distributedCache;
         }
 
 
@@ -58,34 +69,64 @@ namespace EmployeeManegmentUsingJquary.Controllers
 
         public JsonResult GetEmployee()
         {
-            var result = this.employeeBussiness.GetAllEmployee();
+            try
+            {
+                var cacheKey = "customerList";
+                string serializedCustomerList;
+                var users = new List<UserEntity>();
 
-            if (result != null)
-            {
-                return Json(result);
+                var redisCustomerList = distributedCache.Get(cacheKey);
+                if (redisCustomerList != null)
+                {
+                    serializedCustomerList = Encoding.UTF8.GetString(redisCustomerList);
+                    users = JsonConvert.DeserializeObject<List<UserEntity>>(serializedCustomerList);
+
+                    return Json(users);
+                }
+                else
+                {
+                    var usersToRedis = this.employeeBussiness.GetAllEmployee();
+                    serializedCustomerList = JsonConvert.SerializeObject(usersToRedis);
+                    redisCustomerList = Encoding.UTF8.GetBytes(serializedCustomerList);
+                    var options = new DistributedCacheEntryOptions()
+                        .SetAbsoluteExpiration(DateTime.Now.AddMinutes(10))
+                        .SetSlidingExpiration(TimeSpan.FromMinutes(2));
+                    distributedCache.Set(cacheKey, redisCustomerList, options);
+
+                    return Json(usersToRedis);
+                }
             }
-            else
-            {
-                return Json("null");
+            catch(Exception ex)
+            { 
+                throw new Exception(ex.Message); 
+            
             }
-          
 
         }
 
+
+        
         [HttpPost]
         public JsonResult GetEmployee(string search)
         {
-            var result = this.employeeBussiness.GetAllEmployee();
-
-            var employee = result.Where(x=> x.Name == search || x.Department == search || x.Notes == search).ToList();
-
-            if (employee != null)
+            try
             {
-                return Json(employee);
+                var result = this.employeeBussiness.GetAllEmployee();
+
+                var employee = result.Where(x => x.Name == search || x.Department == search || x.Notes == search).ToList();
+
+                if (employee != null)
+                {
+                    return Json(employee);
+                }
+                else
+                {
+                    return Json("null");
+                }
             }
-            else
+            catch(Exception ex)
             {
-                return Json("null");
+                throw new Exception(ex.Message);
             }
 
 
@@ -110,7 +151,7 @@ namespace EmployeeManegmentUsingJquary.Controllers
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new Exception(ex.Message);
             }
         }
 
@@ -133,7 +174,7 @@ namespace EmployeeManegmentUsingJquary.Controllers
             }
             catch (Exception ex)
             {
-                throw ex;
+                throw new Exception(ex.Message);
             }
         }
     }

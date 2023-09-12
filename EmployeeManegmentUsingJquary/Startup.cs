@@ -38,6 +38,13 @@ namespace EmployeeManegmentUsingJquary
 
             services.AddDbContext<ContextDB>(opt => opt.UseSqlServer(Configuration["ConnectionStrings:EmployeeManagementAjaxDB"]));
 
+            services.AddMemoryCache();
+
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = "localhost:6379";
+            });
+
 
         }
 
